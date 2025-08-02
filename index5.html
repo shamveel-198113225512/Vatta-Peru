@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Useless Nickname Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a14;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='hsla(253, 100%25, 70%25, 0.15)' stroke-width='1'%3E%3Cpath d='M-10 20 Q 40 0 90 20'/%3E%3Cpath d='M-10 50 Q 40 80 90 50'/%3E%3Cpath d='M20 -10 Q 0 40 20 90'/%3E%3Cpath d='M50 -10 Q 80 40 50 90'/%3E%3C/g%3E%3C/svg%3E"),
+                radial-gradient(at 0% 0%, hsla(253, 100%, 70%, 0.3) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, hsla(180, 100%, 60%, 0.3) 0px, transparent 50%);
+            overflow: hidden;
+        }
+        #scribble-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .random-scribble {
+            position: absolute;
+            opacity: 0.5;
+            filter: blur(1px);
+        }
+        .title-font {
+            font-family: 'Bangers', cursive;
+            letter-spacing: 2px;
+            animation: blink 2.5s infinite alternate;
+        }
+        @keyframes blink {
+            0%, 100% {
+                text-shadow: 0 0 5px hsla(180, 100%, 60%, 0.8), 
+                             0 0 10px hsla(180, 100%, 60%, 0.8), 
+                             0 0 15px hsla(180, 100%, 60%, 0.8);
+            }
+            50% {
+                text-shadow: none;
+            }
+        }
+        .chat-bubble-bot {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            align-self: flex-start;
+            border-radius: 20px 20px 20px 5px;
+            border: 1px solid #3498db;
+        }
+        .chat-bubble-user {
+            background-color: #16a085;
+            color: white;
+            align-self: flex-end;
+            border-radius: 20px 20px 5px 20px;
+        }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-container::-webkit-scrollbar-thumb { background: #8e44ad; border-radius: 3px; }
+        .chat-container::-webkit-scrollbar-thumb:hover { background: #9b59b6; }
+        .dot-flashing { position: relative; width: 10px; height: 10px; border-radius: 5px; background-color: #e74c3c; color: #e74c3c; animation: dotFlashing 1s infinite linear alternate; animation-delay: .5s; margin: 0 8px; }
+        .dot-flashing::before, .dot-flashing::after { content: ''; display: inline-block; position: absolute; top: 0; }
+        .dot-flashing::before { left: -15px; width: 10px; height: 10px; border-radius: 5px; background-color: #e74c3c; color: #e74c3c; animation: dotFlashing 1s infinite alternate; animation-delay: 0s; }
+        .dot-flashing::after { left: 15px; width: 10px; height: 10px; border-radius: 5px; background-color: #e74c3c; color: #e74c3c; animation: dotFlashing 1s infinite alternate; animation-delay: 1s; }
+        @keyframes dotFlashing { 0% { background-color: #e74c3c; } 50%, 100% { background-color: #2c3e50; } }
+        
+        .lang-btn {
+            transition: all 0.2s ease-in-out;
+            transform: scale(0.95);
+            opacity: 0.7;
+            border: 1px solid transparent;
+        }
+        .lang-btn.active {
+            transform: scale(1.05);
+            opacity: 1;
+            box-shadow: 0 0 15px currentColor;
+            border-color: currentColor;
+        }
+
+        @keyframes jumpIn {
+            0% {
+                opacity: 0;
+                transform: translateY(50px) scale(0.7);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-20px) scale(1.1);
+            }
+            70% {
+                transform: translateY(10px) scale(0.9);
+            }
+            90% {
+                transform: translateY(-5px) scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 8px rgba(52, 152, 219, 0.6); }
+            50% { box-shadow: 0 0 20px rgba(52, 152, 219, 1); }
+            100% { box-shadow: 0 0 8px rgba(52, 152, 219, 0.6); }
+        }
+
+        .animated-bubble {
+            animation: jumpIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+                       pulseGlow 1.6s ease-in-out 1;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center h-screen p-4">
+    
+    <div id="scribble-container"></div>
+
+    <div class="w-full max-w-2xl h-full md:h-[90vh] md:max-h-[700px] bg-black/30 backdrop-blur-md rounded-3xl flex flex-col border border-purple-500/30" style="box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);">
+        <!-- Header -->
+        <div class="p-4 border-b border-purple-500/30 flex flex-col bg-black/20 rounded-t-3xl">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div>
+                        <h1 class="text-4xl font-bold text-teal-300 title-font">Vatta Peru Co.</h1>
+                        <p id="subtitle" class="text-sm text-purple-300">We killi-fy your name. No regrets.</p>
+                    </div>
+                </div>
+            </div>
+            <p id="language-prompt" class="text-center text-purple-200/80 text-xs mt-4 mb-3">Select your language</p>
+            <div id="language-selector" class="flex items-center justify-center space-x-2">
+                <button data-lang="en" class="lang-btn px-3 py-1 text-sm font-semibold text-sky-300 bg-sky-900/50 rounded-full shadow-md" style="--tw-shadow-color: #38bdf8;">English</button>
+                <button data-lang="ml" class="lang-btn px-3 py-1 text-sm font-semibold text-red-300 bg-red-900/50 rounded-full shadow-md" style="--tw-shadow-color: #f87171;">Malayalam</button>
+                <button data-lang="hi" class="lang-btn px-3 py-1 text-sm font-semibold text-green-300 bg-green-900/50 rounded-full shadow-md" style="--tw-shadow-color: #4ade80;">Hindi</button>
+                <button data-lang="ta" class="lang-btn px-3 py-1 text-sm font-semibold text-purple-300 bg-purple-900/50 rounded-full shadow-md" style="--tw-shadow-color: #c084fc;">Tamil</button>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chat-container" class="flex-1 p-6 overflow-y-auto chat-container space-y-4"></div>
+
+        <!-- Typing Indicator -->
+        <div id="typing-indicator" class="hidden p-4 px-6">
+             <div class="flex items-center chat-bubble-bot px-4 py-3">
+                <div class="dot-flashing"></div>
+            </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="p-4 bg-black/20 border-t border-purple-500/30 rounded-b-3xl">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input type="text" id="user-input" placeholder="If you think you're safe..... enter your name and a little about yourself." class="flex-1 w-full px-4 py-3 bg-slate-800/70 border-purple-500/50 text-teal-200 placeholder-purple-300/70 rounded-full focus:outline-none focus:ring-2 focus:ring-teal-400 transition duration-200" autocomplete="off">
+                <button type="submit" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-5 rounded-full transition duration-200 flex items-center justify-center shadow-lg hover:shadow-xl shadow-teal-500/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-up"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatContainer = document.getElementById('chat-container');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const languageSelector = document.getElementById('language-selector');
+        const subtitle = document.getElementById('subtitle');
+        const languagePrompt = document.getElementById('language-prompt');
+        const scribbleContainer = document.getElementById('scribble-container');
+
+        let currentLanguage = 'ml';
+        
+        const translations = {
+            en: { 
+                welcome1: "Namaskaram machane! 🙏 I'm your personal nickname generator! Ready to get some fire nicknames? Just ask me and I'll give you the most pwoli nicknames ever! 🔥✨.", 
+                welcome2: "So, what's the scene? Tell me what you're doing!", 
+                responseIntro: "Yesss! Here are 5 fire nicknames, fresh out of the oven! 🔥"
+            },
+            ml: { 
+                welcome1: "Namaskaram machane! 🙏 Njan ningalude personal nickname generator aanu! pwoli perukal veno? Ennodu chodicholu, njan tharam! 🔥✨.", 
+                welcome2: "Appo, entha scene? Parayoo, njan pwoli perukal tharam!", 
+                responseIntro: "Adipoli! Itha pidicho 5 choodan pwoli perukal! 🔥"
+            },
+            hi: { 
+                welcome1: "Namaste dost! 🙏 Main tumhara personal nickname generator hoon! Ekdum faadu nicknames chahiye? Bas poocho aur main tumhe sabse tagde nicknames doonga! 🔥✨.", 
+                welcome2: "Toh, kya scene hai? Batao kya kar rahe ho!", 
+                responseIntro: "Mil gaya! Yeh lo 5 ekdum kadak naam, abhi-abhi banaye! 🔥"
+            },
+            ta: { 
+                welcome1: "Vanakkam nanba! 🙏 Naan ungaloda personal nickname generator! Mass-aana nicknames venuma? Enkitta kelu, naan ungalukku vera level-la names tharen! 🔥✨.", 
+                welcome2: "Appo, enna scene? Sollunga, enna panringa nu!", 
+                responseIntro: "Kedaichuruchu! Inthaa pidichukko 5 soodaana mass names! 🔥"
+            }
+        };
+        // NEW: Updated English style to generate Manglish
+        const languageDetails = { 
+            en: { name: 'English', style: 'Manglish (Malayalam in English script)' }, 
+            ml: { name: 'Malayalam', style: 'the native Malayalam script (e.g., "ചായ കുടിയൻ")' }, 
+            hi: { name: 'Hindi', style: 'the native Devanagari script (e.g., "ചाय प्रेमी")' }, 
+            ta: { name: 'Tamil', style: 'the native Tamil script (e.g., "டீ பிரியர்")' } 
+        };
+
+        function createRandomScribbles() {
+            const scribblePatterns = [
+                "M10 80 Q 50 10, 90 80",
+                "M20,50 C20,-20 80,120 80,50 C80,-20 20,120 20,50 Z",
+                "M10 10 L 90 90 M 90 10 L 10 90",
+                "M50,50 m-40,0 a40,40 0 1,0 80,0 a40,40 0 1,0 -80,0"
+            ];
+            const scribbleColors = [
+                'hsla(253, 100%, 70%, 0.5)', 
+                'hsla(180, 100%, 60%, 0.5)',
+                'hsla(50, 100%, 60%, 0.5)',
+                'hsla(330, 100%, 60%, 0.5)'
+            ];
+            const fragment = document.createDocumentFragment();
+
+            for (let i = 0; i < 30; i++) {
+                const scribble = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                
+                const pattern = scribblePatterns[Math.floor(Math.random() * scribblePatterns.length)];
+                const color = scribbleColors[Math.floor(Math.random() * scribbleColors.length)];
+
+                path.setAttribute('d', pattern);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', color);
+                path.setAttribute('stroke-width', Math.random() * 2 + 1.5);
+                
+                scribble.setAttribute('viewBox', '0 0 100 100');
+                scribble.classList.add('random-scribble');
+                scribble.appendChild(path);
+
+                const size = Math.random() * 200 + 75;
+                scribble.style.width = `${size}px`;
+                scribble.style.height = `${size}px`;
+                scribble.style.top = `${Math.random() * 100}vh`;
+                scribble.style.left = `${Math.random() * 100}vw`;
+                scribble.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                fragment.appendChild(scribble);
+            }
+            scribbleContainer.appendChild(fragment);
+        }
+
+        function updateUI(lang, isInitialLoad = false) {
+            currentLanguage = lang;
+            const t = translations[lang];
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                const langKey = btn.dataset.lang;
+                btn.classList.remove('active');
+                if (langKey === lang) {
+                    btn.classList.add('active');
+                    btn.style.boxShadow = `0 0 15px ${btn.style.getPropertyValue('--tw-shadow-color')}`;
+                } else {
+                    btn.style.boxShadow = 'none';
+                }
+            });
+
+            if (isInitialLoad) {
+                chatContainer.innerHTML = '';
+                showWelcomeMessage();
+            } else {
+                if (chatContainer.children.length === 0) {
+                    showWelcomeMessage();
+                }
+            }
+        }
+
+        languageSelector.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const lang = e.target.dataset.lang;
+                if (lang) updateUI(lang);
+            }
+        });
+        
+        function addMessage(text, sender, isAnimated = false) {
+            const messageElement = document.createElement('div');
+            let classList = `max-w-xs md:max-w-md p-3 px-4 shadow-lg chat-bubble-${sender}`;
+            if (isAnimated) {
+                classList += ' animated-bubble';
+            }
+            messageElement.className = classList;
+            messageElement.textContent = text;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function showWelcomeMessage() {
+            const t = translations[currentLanguage];
+            setTimeout(() => addMessage(t.welcome1, 'bot'), 500);
+            setTimeout(() => addMessage(t.welcome2, 'bot'), 1500);
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userText = userInput.value.trim();
+            if (!userText) return;
+
+            addMessage(userText, 'user');
+            userInput.value = '';
+            typingIndicator.classList.remove('hidden');
+
+            try {
+                await generateNicknames(userText);
+            } catch (error) {
+                console.error("Error fetching nicknames:", error);
+                addMessage("Ayyo! Ente processor adichu poyi. Please try again after some time.", 'bot');
+            } finally {
+                typingIndicator.classList.add('hidden');
+            }
+        });
+
+        async function generateNicknames(activity) {
+            const apiKey = "AIzaSyBi7j2JGLujIHWWw5bqRgBUeXmmz4EyXi8"; // API key is handled by the environment.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const details = languageDetails[currentLanguage];
+            const prompt = `You are a fun, witty, and slightly crazy chatbot that creates hilarious and creative nicknames. Your name is 'Vatta Peru Co.'. Your task is to generate 5 random, playful nicknames in ${details.name} for someone who is currently "${activity}". **Instructions:** The nicknames MUST be in ${details.style}. Use a mix of local slang, cultural references, and rhyming words relevant to the language. Use humorous exaggerations. The tone should be playful, witty, and a little bit crazy. Do not add any extra text, explanation or introduction. Just return the JSON. Return the nicknames as a JSON array of 5 strings.`;
+
+            const payload = {
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json", responseSchema: { type: "ARRAY", items: { type: "STRING" } } }
+            };
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
+
+            const result = await response.json();
+
+            if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                const nicknamesText = result.candidates[0].content.parts[0].text;
+                const nicknames = JSON.parse(nicknamesText);
+                
+                typingIndicator.classList.add('hidden');
+                addMessage(translations[currentLanguage].responseIntro, 'bot');
+
+                nicknames.forEach((nickname, index) => {
+                    setTimeout(() => {
+                        addMessage(nickname, 'bot', true); // Pass true to animate
+                    }, 500 * (index + 1)); // Stagger the animation
+                });
+            } else {
+                throw new Error("Invalid response structure from API.");
+            }
+        }
+
+        window.onload = () => {
+            updateUI(currentLanguage, true);
+            createRandomScribbles();
+        };
+    </script>
+</body>
+</html
