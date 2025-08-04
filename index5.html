@@ -316,7 +316,7 @@
         });
 
         async function generateNicknames(activity) {
-            const apiKey = "AIzaSyBi7j2JGLujIHWWw5bqRgBUeXmmz4EyXi8"; // API key is handled by the environment.
+            const apiKey = "" // API key is handled by the environment.
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             const details = languageDetails[currentLanguage];
             const prompt = `You are a fun, witty, and slightly crazy chatbot that creates hilarious and creative nicknames. Your name is 'Vatta Peru Co.'. Your task is to generate 5 random, playful nicknames in ${details.name} for someone who is currently "${activity}". **Instructions:** The nicknames MUST be in ${details.style}. Use a mix of local slang, cultural references, and rhyming words relevant to the language. Use humorous exaggerations. The tone should be playful, witty, and a little bit crazy. Do not add any extra text, explanation or introduction. Just return the JSON. Return the nicknames as a JSON array of 5 strings.`;
@@ -360,3 +360,4 @@
     </script>
 </body>
 </html
+
